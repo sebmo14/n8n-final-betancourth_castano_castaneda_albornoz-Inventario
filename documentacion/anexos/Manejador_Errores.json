@@ -1,0 +1,201 @@
+{
+  "name": "Manejador_Errores",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "er-01",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f0",
+              "name": "workflow",
+              "value": "={{ $json.workflow.name }}",
+              "type": "string"
+            },
+            {
+              "id": "f1",
+              "name": "workflowId",
+              "value": "={{ $json.workflow.id }}",
+              "type": "string"
+            },
+            {
+              "id": "f2",
+              "name": "ejecucion",
+              "value": "={{ $json.execution.id }}",
+              "type": "string"
+            },
+            {
+              "id": "f3",
+              "name": "modo",
+              "value": "={{ $json.execution.mode }}",
+              "type": "string"
+            },
+            {
+              "id": "f4",
+              "name": "nodoQueFallo",
+              "value": "={{ $json.execution.lastNodeExecuted }}",
+              "type": "string"
+            },
+            {
+              "id": "f5",
+              "name": "mensaje",
+              "value": "={{ $json.execution.error.message }}",
+              "type": "string"
+            },
+            {
+              "id": "f6",
+              "name": "momento",
+              "value": "={{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
+              "type": "string"
+            },
+            {
+              "id": "f7",
+              "name": "urlEjecucion",
+              "value": "={{ $json.execution.url }}",
+              "type": "string"
+            },
+            {
+              "id": "f8",
+              "name": "asunto",
+              "value": "=[n8n] Fallo en {{ $json.workflow.name }} - {{ $json.execution.lastNodeExecuted }}",
+              "type": "string"
+            },
+            {
+              "id": "f9",
+              "name": "cuerpo",
+              "value": "=Una ejecucion del proyecto de inventario termino con error.\n\nWorkflow: {{ $json.workflow.name }}\nNodo donde fallo: {{ $json.execution.lastNodeExecuted }}\nMensaje: {{ $json.execution.error.message }}\nModo de ejecucion: {{ $json.execution.mode }}\nEjecucion n.: {{ $json.execution.id }}\nMomento: {{ $now.format('yyyy-MM-dd HH:mm:ss') }}\n\nRevisar en n8n: {{ $json.execution.url }}\n\nQue hacer:\n1. Abrir la ejecucion y revisar el OUTPUT del nodo que fallo.\n2. Si fue un fallo temporal del servicio, reintentar la ejecucion desde n8n.\n3. Si el movimiento ya se habia registrado, reenviarlo NO duplica el descuento: la tabla Movimientos rechaza el mismo movimiento_id.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "er-02",
+      "name": "Resumir el fallo",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -320,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://kmznilihlzuorlkieqjt.supabase.co/rest/v1/Errores",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ workflow: $json.workflow, nodo: $json.nodoQueFallo, mensaje: $json.mensaje, ejecucion: String($json.ejecucion), modo: $json.modo }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "er-03",
+      "name": "Registrar el fallo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -80,
+        300
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "D7LOS0PfzFwQxCbZ",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "sendTo": "encargadoexcepcional@gmail.com",
+        "subject": "={{ $('Resumir el fallo').item.json.asunto }}",
+        "emailType": "text",
+        "message": "={{ $('Resumir el fallo').item.json.cuerpo }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "er-04",
+      "name": "Avisar al equipo",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        160,
+        300
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ItPykSQ2ZzkGzU82",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Resumir el fallo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resumir el fallo": {
+      "main": [
+        [
+          {
+            "node": "Registrar el fallo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar el fallo": {
+      "main": [
+        [
+          {
+            "node": "Avisar al equipo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Bogota"
+  },
+  "pinData": {}
+}
