@@ -255,7 +255,7 @@ cd pruebas && python -m http.server 5500
 | `404` | El SKU no existe |
 | `409` | Stock insuficiente para el despacho |
 | `500` | El movimiento no se pudo registrar |
-| `502` | No se pudo consultar Supabase, o el descuento no se confirmó |
+| `502` | No se pudo consultar Supabase, o el descuento no se confirmó. Cubre tanto un código de error del servicio como una conexión que no llega a abrirse |
 
 Los `motivo` admitidos son `venta`, `despacho a sucursal`, `avería` y `ajuste de inventario`.
 La cantidad debe ser un entero entre 1 y 10000.

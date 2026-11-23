@@ -198,7 +198,8 @@ agente de consulta.
 | Campo vacío, cantidad no entera o fuera de rango, motivo no admitido | `400`, sin tocar la base de datos |
 | SKU inexistente | `404` |
 | Cantidad mayor que el stock | `409`. Rechazo de negocio, no error |
-| Supabase no responde | `502`. **No** se convierte en un `404` falso |
+| Supabase responde con un código de error | `502`. **No** se convierte en un `404` falso |
+| Supabase no es alcanzable: host, DNS o tiempo agotado | `502` por la salida de error del nodo. Ver la nota de abajo |
 | El `PATCH` no modifica filas | `502`, y el movimiento no se registra |
 | El `POST` del movimiento falla | `500` |
 | Gmail rechaza el envío | `200` con `avisoPendiente: true` y `alerta_enviada` en `false` |
@@ -208,6 +209,23 @@ agente de consulta.
 que de verdad impide el doble descuento es la restricción `unique` sobre `movimiento_id` en
 la base de datos. Si dos peticiones idénticas llegan a la vez, la consulta previa puede no
 verlas, pero la segunda inserción será rechazada por Postgres.
+
+**Un servicio caído y un servicio que responde mal no son lo mismo.** Los nodos HTTP llevan
+la opción `neverError`, que impide que un **código** de error HTTP detenga el flujo y deja
+que sea el `IF` siguiente quien decida. Pero si la conexión no llega a abrirse no hay ningún
+código que neutralizar: el nodo lanza una excepción y el flujo se detendría antes del `IF`,
+dejando al cliente sin respuesta. Por eso los cuatro nodos HTTP de esta rama tienen además
+una **salida de error propia**, conectada directamente al cuerpo de respuesta que
+corresponde:
+
+| Nodo | Si no hay conexión |
+|---|---|
+| `Buscar movimiento`, `Buscar producto` | `502`, y el movimiento no se procesa |
+| `Actualizar stock` | `502`, sin descontar |
+| `Registrar movimiento` | `500`, avisando de que el stock sí se descontó |
+
+Esta distinción no estaba en el diseño: salió de la prueba CP-02, donde el flujo se detuvo
+con `ENOTFOUND` y el cliente no recibió nada.
 
 ---
 
@@ -288,6 +306,7 @@ retirar la memoria.
 | `Contrastar cifras` en el resumen | No había forma de detectar una cifra inventada |
 | Tipos declarados en las entradas del subflujo de alerta | n8n rechazaba `stockActual` por recibir número donde esperaba texto |
 | El filtro de periodo pasó a un único parámetro `and` | El límite inferior se perdía en silencio |
+| Los nodos HTTP del webhook devuelven su error por una salida propia | `neverError` cubría los códigos de error HTTP, pero un fallo de conexión detenía el flujo sin responder nada |
 
 ### 4.2 Qué funciona con respaldo
 
@@ -295,31 +314,60 @@ Los resultados de las pruebas están en
 [`../pruebas/Bitacora_Clase_11_Pruebas.md`](../pruebas/Bitacora_Clase_11_Pruebas.md), con sus
 evidencias en [`../pruebas/evidencias/`](../pruebas/evidencias/).
 
-A la fecha de este documento, lo comprobado con evidencia es:
+Se ejecutaron nueve de los doce casos previstos. Lo que queda comprobado con evidencia es:
 
-| Qué | Evidencia |
-|---|---|
-| El agente consulta y responde con cifras del periodo pedido | `46`, `47` |
-| El agente distingue «no pude consultar» de «no hubo movimientos» | Observado al fallar el formato de fechas |
-| La consulta perdía el límite inferior del periodo | `47`, y la ejecución 182 de n8n |
+| Qué quedó comprobado | Cómo se comprobó | Evidencia |
+|---|---|---|
+| Una salida mayor que el stock se rechaza con `409` **y no descuenta nada** | Los nodos de escritura no aparecen en la ejecución | `48`, `49`, ejecución 188 |
+| La rama de alerta completa: registra, envía el correo, marca la alerta y responde `200` | Recorrido completo de la ejecución, más el correo recibido con cifras coincidentes | `50`, `51`, `52`, ejecución 192 |
+| El movimiento se registra **antes** de notificar | Orden de los nodos dentro de la ejecución 192 | `51` |
+| El agente se niega a escribir y no invoca ninguna herramienta | Respuesta más los logs de la ejecución | `53` |
+| El agente vuelve a consultar en lugar de repetir de memoria | Dos llamadas distintas a la herramienta, con la cifra movida en el movimiento añadido | `55`, ejecuciones 196 y 200 |
+| El agente resuelve un periodo relativo y dice con qué fechas consultó | Repetido tras corregir el mensaje de sistema | `46` |
+| El agente distingue «no pude consultar» de «no hubo movimientos» | Observado al fallar el formato de fechas | — |
+
+Y lo que las pruebas dejaron al descubierto:
+
+| Defecto encontrado | Cómo se vio | Estado |
+|---|---|---|
+| La consulta del periodo perdía el límite inferior | La URL ejecutada no llevaba `gte`; de 93 filas devueltas solo 35 eran del periodo | Corregido. **Sin reverificar** |
+| La herramienta del agente no recibía las fechas | Rechazo de `Validar periodo` en la ejecución 180 | Corregido y vuelto a comprobar |
+| El agente pedía unas fechas que él mismo había calculado | Respuesta con apariencia de dato | Corregido y vuelto a comprobar |
+| Un Supabase inalcanzable detenía el flujo sin responder nada, en lugar de devolver `502` | `ENOTFOUND` en la ejecución 189, terminada en error y sin respuesta al cliente | Corregido. **Sin reverificar** |
+| `Marcar alerta enviada` no declaraba credencial | Revisión del archivo fusionado | Corregido y verificado en la ejecución 192 |
 
 El resto de los casos está en la bitácora con su estado real. **Los casos que no se han
-ejecutado figuran como no ejecutados**, no como aprobados.
+ejecutado figuran como no ejecutados**, y **las dos correcciones que no se han vuelto a
+probar figuran como no comprobadas**, no como cerradas.
 
 ### 4.3 Pendientes que permanecen abiertos
 
 | Pendiente | Estado |
 |---|---|
+| Reverificar el rango del periodo tras la corrección | Abierto. El intento del 2026-11-23 se hizo sobre una copia desactualizada y no fue concluyente |
+| Reverificar el `502` por fallo de conexión | Abierto. La corrección es del 2026-11-23 y no se ha vuelto a probar |
 | Asignar `Manejador_Errores` en *Settings → Error Workflow* | Abierto. No viaja en el JSON porque es un id interno de cada instancia |
 | Confirmar `allowedOrigins` contra el origen real del simulador | Abierto |
-| Acordar por escrito la regla del `409` antes de probarla | Abierto |
-| Ejecutar los casos restantes de la bitácora | Abierto |
+| Formalizar por escrito la regla del `409` | Abierto, pero la regla ya está comprobada y enunciada en la bitácora |
+| Ejecutar CP-01 y CP-05 | Abierto |
 
 ### 4.4 Lo que no se afirma
 
 No se ha medido ninguna mejora de tiempo ni de costo frente al proceso manual, así que no se
 afirma ninguna. El beneficio esperado —detectar el faltante antes— es la razón del proyecto,
 no un resultado comprobado por él.
+
+Tampoco se afirma que el flujo esté probado de extremo a extremo. Tres casos no se
+ejecutaron, y dos de las correcciones aplicadas no se han vuelto a comprobar. Lo que sí se
+afirma es más modesto y, a cambio, está respaldado: cada fila de la primera tabla de 4.2
+tiene detrás una ejecución concreta de n8n que se puede abrir y mirar.
+
+Conviene decir también cómo se encontraron los defectos de la segunda tabla, porque es lo que
+más condicionó el trabajo. Ninguno era visible desde el lienzo. En el del límite inferior del
+periodo, el nodo estaba verde, la respuesta era `200`, llegaban datos, y la cifra estaba mal:
+el modelo redactó con exactitud lo que el flujo le entregó. Encontrarlo exigió abrir la
+ejecución y leer la URL que realmente se envió. De ahí que el correo del resumen lleve las
+cifras crudas al lado del texto redactado.
 
 ---
 

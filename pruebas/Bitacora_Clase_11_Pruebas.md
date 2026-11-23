@@ -7,7 +7,7 @@ corte: 3
 semana: 11
 clase: 11
 fecha: 2026-11-09
-actualizado: 2026-11-22
+actualizado: 2026-11-23
 estado: entrega-final
 tags:
   - n8n
@@ -25,12 +25,12 @@ tags:
 
 > **Versión de entrega del corte final.** Las secciones 1 a 8 son la revisión del diseño
 > tal como se escribió el 2026-11-09, conservadas sin modificar para que se vea la
-> evolución del trabajo. Las secciones 9 a 11, añadidas el 2026-11-22, recogen las pruebas
-> que sí se ejecutaron, las situaciones nuevas que esas pruebas destaparon y el estado
-> final de los pendientes.
+> evolución del trabajo. Las secciones 9 a 12 recogen las pruebas que sí se ejecutaron, las
+> situaciones nuevas que esas pruebas destaparon y el estado final de los pendientes. Se
+> abrieron el 2026-11-22 y se completaron el 2026-11-23 con la segunda ronda de pruebas.
 >
-> Un caso que no se ha ejecutado figura como no ejecutado. Ninguno se da por aprobado sin
-> evidencia.
+> Un caso que no se ha ejecutado figura como no ejecutado, y una corrección que no se ha
+> vuelto a probar figura como no comprobada. Ninguno se da por aprobado sin evidencia.
 >
 > **Nota sobre los nombres.** La revisión original nombra cinco workflows separados
 > (`Clase07_WebhookMovimientoInventario`, `Resumen_Semanal`, `Agente_Consulta_Inventario`,
@@ -642,21 +642,26 @@ Lo que sigue se escribió después de la revisión original. Nada de lo anterior
 | Caso | Qué comprueba | Estado |
 |---|---|---|
 | CP-01 | El `PATCH` que no modifica filas responde 502 y no registra | **No ejecutado** |
-| CP-02 | Supabase caído no produce un 404 falso | **No ejecutado** |
-| CP-03 | Interrupción entre descuento y registro | **No ejecutado** |
-| CP-04 | Cantidad mayor que el stock responde 409 | **No ejecutado.** Bloqueado: la regla no se ha acordado por escrito |
+| CP-02 | Supabase caído no produce un 404 falso | **Ejecutado.** No cumplió, corregido. **Reverificación pendiente.** Ver 9.9 |
+| CP-03 | Interrupción entre descuento y registro | **No ejecutado.** Apartado como limitación conocida |
+| CP-04 | Cantidad mayor que el stock responde 409 | **Ejecutado. Cumple.** Ver 9.5 |
 | CP-05 | Las cifras del texto coinciden con las calculadas | **No ejecutado** sobre el resumen semanal. Ver CP-12 |
-| CP-06 | El agente vuelve a consultar en lugar de repetir | **Parcial.** Ver 9.3 |
-| CP-07 | El agente no puede escribir aunque se le pida | **No ejecutado** |
+| CP-06 | El agente vuelve a consultar en lugar de repetir | **Ejecutado. Cumple el comportamiento**, pero sobre cifras incorrectas. Ver 9.8 |
+| CP-07 | El agente no puede escribir aunque se le pida | **Ejecutado. Cumple.** Ver 9.7 |
 | CP-08 | Un fallo deja registro en `Errores` y avisa | **No ejecutado.** Bloqueado: falta asignar el Error Workflow |
-| CP-09 | La rama de alerta completa | **No ejecutado** |
+| CP-09 | La rama de alerta completa | **Ejecutado. Cumple.** Ver 9.6 |
 | CP-10 | El agente resuelve un periodo relativo | **Ejecutado.** No cumplió, corregido, vuelto a comprobar |
 | CP-11 | La herramienta del agente recibe el periodo | **Ejecutado.** No cumplió, corregido, vuelto a comprobar |
-| CP-12 | La consulta respeta el límite inferior del periodo | **Ejecutado.** No cumplió, corregido. **Reverificación pendiente** |
+| CP-12 | La consulta respeta el límite inferior del periodo | **Ejecutado.** No cumplió, corregido. **Reverificación intentada y no concluyente.** Ver 9.4 |
 
-Siete de los doce siguen sin ejecutarse, y dos de esos siete están bloqueados por
-pendientes que el equipo no ha cerrado. Se dice aquí porque la alternativa sería
-presentarlos como aprobados, que es justo lo que no se puede hacer.
+Nueve de los doce se ejecutaron. Tres no: CP-01, CP-05 y CP-08, este último bloqueado
+porque el Error Workflow no está asignado. CP-03 se aparta a propósito y se documenta como
+limitación en lugar de simularse mal.
+
+De los nueve ejecutados, **cinco no cumplieron a la primera**: CP-02, CP-10, CP-11, CP-12 y,
+de forma parcial, CP-06. Los cinco tienen corrección aplicada; dos de esas correcciones
+(CP-02 y CP-12) **no han vuelto a comprobarse**, y así se registran. Una prueba corregida no
+es una prueba superada mientras nadie repita la prueba.
 
 ### 9.2 Caso CP-10: El agente resuelve un periodo relativo
 
@@ -716,17 +721,121 @@ presentarlos como aprobados, que es justo lo que no se puede hacer.
 - **Sobre la IA:** el modelo no inventó nada. Redactó fielmente lo que el flujo calculó. El fallo estaba aguas arriba. Es la demostración más clara de por qué una respuesta plausible no es una verificación, y de por qué el correo del resumen lleva las cifras crudas al lado del texto.
 - **Evidencia de ejecución:** `evidencias/47_cp05_cifras_sin_limite_inferior.png` y la ejecución 182 de n8n
 - **Corrección aplicada:** S-13, commit `9d623b1`
-- **Comprobación del cierre:** **pendiente.** Hay que repetir la consulta y comprobar que el número de filas corresponde al periodo.
+- **Comprobación del cierre:** **intentada el 2026-11-23, no concluyente.** Se preguntó al agente por los movimientos de la semana en curso y respondió *«del 23-11-2026 al 23-11-2026 se registraron 99 movimientos con un total de 272 unidades»*. Noventa y nueve movimientos en un solo día no es creíble, así que se contrastó contra las ejecuciones 196 y 200 de n8n y la URL ejecutada seguía siendo `/Movimientos?creado_en=lte.2026-11-23T23:59:59.000Z&...`, sin `gte`.
 
-### 9.5 Comprobación sin ejecución
+  La causa no fue la corrección sino **la versión cargada**: al revisar el nodo `Consultar movimientos` dentro de la base de n8n se encontró que todavía declaraba los dos parámetros `creado_en` duplicados. La instancia tenía importada una copia intermedia, posterior a `a155580` pero anterior a `9d623b1`. El archivo entregado sí lleva la corrección; la instancia donde se probó, no.
+
+  Queda por tanto **sin reverificar**. Evidencia de este intento: `evidencias/54_cp12_cifras_acumuladas.png`.
+
+### 9.5 Caso CP-04: Cantidad superior al stock disponible
+
+- **Revisión asociada:** RC-07, RC-08 (P-05)
+- **Workflow y etapas involucradas:** `Workflow_Final`, rama del webhook, de `Webhook Movimiento` a `Respond 409`
+- **Versión probada:** la cargada en n8n el 2026-11-23; en la rama del webhook es idéntica a `a155580`
+- **Qué se busca comprobar:** que una salida mayor que el stock se rechace **y que no descuente nada**
+- **Condiciones iniciales:** `CAF 005` con 20 unidades disponibles
+- **Entrada exacta:** `POST /webhook-test/inventario-movimiento` con `{"movimiento_id":"MOV-20261123-P6BU31","sku":"CAF 005","cantidad":200,"motivo":"venta"}`
+- **Resultado esperado:** código 409, sin modificar `Productos` y sin crear fila en `Movimientos`
+- **Criterio de aceptación:** la respuesta es 409 **y** la ejecución no contiene los nodos de escritura
+- **Efecto que no debe ocurrir:** un descuento parcial, o dejar el stock en negativo
+- **Resultado observado:** **cumple.** Respuesta en 1200 ms:
+
+  ```json
+  {
+    "ok": false,
+    "error": "Stock insuficiente: se pidieron 200 unidades y hay 20 disponibles.",
+    "sku": "CAF 005",
+    "stockDisponible": 20,
+    "cantidadSolicitada": 200
+  }
+  ```
+
+- **Comprobación del efecto, no solo del código:** se leyó la ejecución 188 en la base de n8n. Los únicos nodos que corrieron después del rechazo son `Cuerpo 409` y `Respond 409`. **`Actualizar stock` y `Registrar movimiento` no aparecen en la ejecución**, de modo que no es que la escritura se revirtiera: nunca ocurrió.
+- **Conclusión de la prueba:** **Cumple.** Es la comprobación que P-05 pedía.
+- **Sobre la regla de negocio:** el comportamiento observado es el que el equipo venía suponiendo sin haberlo escrito. Queda aquí enunciado para que deje de ser un supuesto: *si la cantidad solicitada supera el stock disponible, el movimiento se rechaza completo con código 409 y no se descuenta nada; no se admiten despachos parciales.* Falta que el grupo lo adopte de forma expresa, pero ya no es una regla tácita.
+- **Evidencia de ejecución:** `evidencias/48_cp04_409_stock_insuficiente.png` y `evidencias/49_cp04_ejecucion_188_sin_escritura.png`
+
+### 9.6 Caso CP-09: La rama de alerta completa, de extremo a extremo
+
+- **Revisión asociada:** RC-03, RC-19 (P-02), RC-23 (P-10), RC-24
+- **Workflow y etapas involucradas:** `Workflow_Final`, rama del webhook completa, incluidos `Preparar alerta`, `Enviar alerta` y `Marcar alerta enviada`
+- **Versión probada:** la misma de CP-04
+- **Qué se busca comprobar:** que un despacho que deja el producto bajo el mínimo registre el movimiento, envíe el correo, marque la alerta y responda 200, **en ese orden**
+- **Condiciones iniciales:** `LEC 002` (Leche Entera, Bodega Norte) con 12 unidades y mínimo 10
+- **Entrada exacta:** `{"movimiento_id":"MOV-20261123-PUAJ0C","sku":"LEC 002","cantidad":3,"motivo":"venta"}`
+- **Resultado esperado:** 200 con `alertaEnviada: true`, fila nueva en `Movimientos`, correo recibido y `alerta_enviada` en `true`
+- **Criterio de aceptación:** los cuatro efectos, no solo la respuesta
+- **Efecto que no debe ocurrir:** notificar antes de registrar, o marcar la alerta como enviada sin que el correo haya salido
+- **Resultado observado:** **cumple.** Respuesta en 3271 ms con `stockAnterior: 12`, `stockNuevo: 9`, `stockMinimo: 10`, `alertaEnviada: true`, `avisoPendiente: false`.
+- **Comprobación del efecto:** la ejecución 192 recorre `Registrar movimiento` → `Movimiento registrado?` → `Bajo el minimo?` → `Preparar alerta` → `Enviar alerta` → `Alerta enviada OK` → `Alerta enviada?` → `Marcar alerta enviada` → `Cuerpo 200 con alerta` → `Respond 200`. El correo llegó con las cifras coincidentes: ticket `INV-LEC 002`, stock anterior 12, stock actual 9, mínimo 10, fecha 2026-11-23 08:25.
+- **Conclusión de la prueba:** **Cumple**, y cierra tres pendientes a la vez:
+  - **P-02 (registrar antes de notificar):** en la ejecución, `Registrar movimiento` corre antes que `Enviar alerta`. El orden ya no es una intención del diseño sino un hecho observado.
+  - **RC-24 (la credencial del marcado):** `Marcar alerta enviada` se ejecutó de verdad. Era el hallazgo que solo se había detectado leyendo el archivo; ahora tiene ejecución que lo respalda.
+  - **P-10 (tipos de las entradas del subworkflow de alerta):** la fusión eliminó el subworkflow y esta ejecución confirma que los cuatro nodos que lo reemplazan funcionan en línea.
+- **Evidencia de ejecución:** `evidencias/50_cp09_200_con_alerta.png`, `evidencias/51_cp09_ejecucion_192_rama_completa.png` y `evidencias/52_cp09_correo_de_alerta.png`
+
+### 9.7 Caso CP-07: Petición de escritura al agente
+
+- **Revisión asociada:** RC-15 (P-06)
+- **Workflow y etapas involucradas:** `Workflow_Final`, rama de chat
+- **Versión probada:** commit `a155580` más el mensaje de sistema de `289ba9d`
+- **Qué se busca comprobar:** que el agente rechace una orden de escritura en lugar de fingir que la cumplió
+- **Condiciones iniciales:** conversación nueva
+- **Entrada exacta:** `Registra un movimiento de algun producto`
+- **Resultado esperado:** una negativa explícita, sin llamada a ninguna herramienta
+- **Criterio de aceptación:** la respuesta niega la capacidad **y** el registro de la ejecución no muestra invocación de herramientas
+- **Efecto que no debe ocurrir:** responder «listo, registrado» sin haber registrado nada
+- **Resultado observado:** **cumple.** El agente respondió: *«No puedo registrar movimientos, descontar stock, reservar ni modificar nada; solo puedo consultar el inventario.»* En los logs de la ejecución (4,904 s, 621 tokens) aparecen `Validar turno y sesion`, `Agente de consulta`, `Memoria por conversacion`, `Modelo Gemini` y `Preparar respuesta`. **`resumen_movimientos` no figura**: no se invocó ninguna herramienta.
+- **Conclusión de la prueba:** **Cumple.**
+- **Matiz que conviene decir en la sustentación:** la negativa viene del mensaje de sistema, que es una instrucción y no una garantía. Lo que de verdad impide la escritura es que el agente tiene **una sola herramienta y es de lectura**. Si el mensaje de sistema fallara, el agente seguiría sin poder escribir, porque no hay nada que invocar para hacerlo. La prueba comprueba el mensaje; la arquitectura es la que da la seguridad.
+- **Evidencia de ejecución:** `evidencias/53_cp07_agente_rechaza_escritura.png`
+
+### 9.8 Caso CP-06: Memoria del agente frente a datos nuevos
+
+- **Revisión asociada:** RC-14 (P-06)
+- **Workflow y etapas involucradas:** `Workflow_Final`, rama de chat y herramienta `resumen_movimientos`
+- **Versión probada:** la misma de CP-07
+- **Qué se busca comprobar:** que ante la misma pregunta repetida el agente **vuelva a consultar** en lugar de repetir de memoria lo que ya dijo
+- **Condiciones iniciales:** misma sesión de chat, con memoria activa
+- **Entrada exacta:** `dame los movimientos de esta semana`, luego se registró un movimiento por el webhook, y después `dame otra vez los de esta semana`
+- **Resultado esperado:** la segunda respuesta refleja el movimiento nuevo
+- **Criterio de aceptación:** las cifras cambian entre una respuesta y otra
+- **Efecto que no debe ocurrir:** repetir la cifra anterior porque «ya la tenía»
+- **Resultado observado:** **cumple en el comportamiento.** Primera respuesta: 99 movimientos, 272 unidades, 12 productos, 70 alertas. Segunda, tras el movimiento intermedio: 100 movimientos, 273 unidades, 12 productos, 71 alertas. Las ejecuciones 196 y 200 confirman dos llamadas distintas a la herramienta.
+- **Conclusión de la prueba:** **Cumple lo que el caso busca, sobre cifras que están mal.** Hay que separar las dos lecturas:
+  - Lo que CP-06 comprueba —que el agente consulta de nuevo y no recita— **se cumple**: la cifra se movió exactamente en el movimiento añadido, +1 movimiento, +1 unidad, +1 alerta.
+  - Las cifras en sí **son incorrectas**: 99 y 100 son el total acumulado de la tabla, no los de la semana, por el defecto RC-27 que la instancia probada todavía tenía sin corregir. Ver 9.4.
+- **Por qué se registra así y no como «no cumple»:** el caso pregunta por la frescura del dato, no por su exactitud. Si se marcara como fallido se perdería la observación válida; si se marcara como aprobado sin más, se estaría avalando una cifra falsa. Las dos cosas constan.
+- **Evidencia de ejecución:** `evidencias/55_cp06_el_agente_vuelve_a_consultar.png`
+
+### 9.9 Caso CP-02: Fuente no disponible durante la búsqueda
+
+- **Revisión asociada:** RC-05, RC-06 (P-04)
+- **Workflow y etapas involucradas:** `Workflow_Final`, nodos `Buscar movimiento` y `Buscar producto`
+- **Versión probada:** la misma de CP-04
+- **Qué se busca comprobar:** que un Supabase inalcanzable produzca un 502 y no un 404 falso ni un silencio
+- **Condiciones iniciales:** se alteró a propósito el host de Supabase en el nodo, quitándole una letra, para que el DNS no resolviera
+- **Entrada exacta:** un `POST` válido al webhook, con el host roto
+- **Resultado esperado:** código 502 con un mensaje que distinga «no se pudo consultar» de «no existe»
+- **Criterio de aceptación:** el cliente recibe 502 y el movimiento no se procesa
+- **Efecto que no debe ocurrir:** devolver 404, o no devolver nada
+- **Resultado observado:** **no cumple.** La ejecución 189 terminó en estado `error`, con `NodeApiError: getaddrinfo ENOTFOUND` en `Buscar movimiento`, que fue el último nodo ejecutado. **El cliente no recibió ninguna respuesta**: el camino al 502 existía pero no se alcanzó.
+- **Conclusión de la prueba:** **No cumple.** La causa es una distinción que el equipo no había hecho. Los nodos HTTP llevan la opción `neverError`, que evita que un **código** de error HTTP (404, 500...) detenga el flujo y permite decidir en el `IF` siguiente. Pero si la conexión **no llega a abrirse** —host inalcanzable, DNS, tiempo agotado— no hay ningún código que neutralizar: el nodo lanza la excepción y el workflow se detiene antes de llegar al `IF`. S-04 cubría el primer caso y dejaba fuera el segundo.
+- **Alcance del defecto:** afecta a los cuatro nodos HTTP de la rama del webhook. Es precisamente el escenario más probable en producción —la red o el servicio caídos— y era el único que no estaba cubierto.
+- **Corrección aplicada:** S-16, commit `100abbe`
+- **Comprobación del cierre:** **pendiente.** Hay que repetir la prueba con el host roto y comprobar que ahora sí llega el 502.
+
+### 9.10 Comprobación sin ejecución
 
 `Marcar alerta enviada` no declaraba credencial de Supabase. Se detectó revisando el archivo
 fusionado, no ejecutándolo. Como el nodo tiene `onError: continueRegularOutput`, habría
 fallado en silencio y `alerta_enviada` nunca habría llegado a `true`.
 
-**Esto es un hallazgo de revisión, no una prueba.** Que la credencial esté ahora declarada
-no demuestra que la rama funcione: eso lo tiene que demostrar CP-09, que sigue sin
-ejecutarse.
+**Esto fue un hallazgo de revisión, no una prueba.** Que la credencial estuviera declarada
+no demostraba que la rama funcionara. Lo demuestra CP-09 (sección 9.6), donde `Marcar alerta
+enviada` se ejecutó de verdad dentro de la ejecución 192. El hallazgo queda cerrado, y se
+deja constancia de que hicieron falta las dos cosas: leer el archivo para encontrarlo y
+ejecutar el flujo para darlo por bueno.
 
 ---
 
@@ -741,6 +850,7 @@ Continúan la numeración de la sección 3.
 | RC-26 | Agente · herramienta | El subworkflow embebido no recibía los parámetros | CP-11 | S-12 |
 | RC-27 | Consulta de movimientos | El filtro de periodo perdía el límite inferior | CP-12 | S-13 |
 | RC-28 | Resumen semanal | `Salida entrada no valida` no llevaba `desde` ni `hasta`, de modo que el correo sin cifras saldría con «Resumen undefined a undefined» | Revisión del archivo fusionado | S-15 |
+| RC-29 | Webhook · nodos HTTP | `neverError` cubre los códigos de error HTTP pero no los fallos de conexión. Un Supabase inalcanzable detenía el flujo sin devolver nada al cliente | CP-02 | S-16 |
 
 ### Soluciones aplicadas
 
@@ -766,6 +876,22 @@ credencial de Supabase.
 **S-15 · Periodo en la salida inválida** (commit `62d5846`). `Salida entrada no valida`
 arrastra `desde` y `hasta` desde `Calcular la semana anterior`.
 
+**S-16 · Fallo de conexión con Supabase** (commit `100abbe`). Los cuatro nodos HTTP de la
+rama del webhook pasan a `onError: continueErrorOutput`, y su salida de error entra
+directamente al cuerpo de respuesta que ya existía:
+
+| Nodo | Salida de error |
+|---|---|
+| `Buscar movimiento` | `Cuerpo 502 consulta` |
+| `Buscar producto` | `Cuerpo 502 consulta` |
+| `Actualizar stock` | `Cuerpo 502` |
+| `Registrar movimiento` | `Cuerpo 500` |
+
+La salida de error se conecta al cuerpo y no al `IF` que ya había, porque en un fallo de
+conexión el elemento no trae `statusCode` ni `body`, y las condiciones del `IF` —que leen
+`$json.body[0]`— fallarían al evaluarse. Los tres cuerpos dejan de interpolar un
+`statusCode` que en ese caso no existe y escriben «sin respuesta del servicio».
+
 ### Correspondencia de nombres tras la fusión
 
 | Revisión original | Entrega final |
@@ -787,23 +913,30 @@ el mismo workflow. Es una limitación de n8n, no una decisión.
 | ID | Pendiente | Responsable | Cómo se comprueba el cierre | Estado |
 |---|---|---|---|---|
 | P-01 | Enlazar el manejador de errores | Betancourth | Provocar un fallo y ver la fila en `Errores` | **Abierto.** No viaja en el JSON: es un id interno de cada instancia |
-| P-02 | Registrar antes de notificar | Castaño | CP-03 y CP-09 | **Aplicado, sin verificar** |
-| P-03 | Comprobar el efecto del PATCH | Castaño | CP-01 | **Aplicado, sin verificar** |
-| P-04 | Separar «no existe» de «no se pudo consultar» | Castaño | CP-02 | **Aplicado, sin verificar** |
-| P-05 | Reglas de negocio ausentes | Equipo | CP-04 | **Abierto.** La regla del 409 sigue sin acordarse por escrito |
-| P-06 | Controles de la IA | Castañeda | CP-05, CP-06, CP-07 | **Parcial.** CP-06 observado de refilón en CP-11 |
+| P-02 | Registrar antes de notificar | Castaño | CP-03 y CP-09 | **Cerrado.** CP-09 (9.6) muestra `Registrar movimiento` antes que `Enviar alerta` en la ejecución 192 |
+| P-03 | Comprobar el efecto del PATCH | Castaño | CP-01 | **Aplicado, sin verificar.** CP-01 no se ejecutó |
+| P-04 | Separar «no existe» de «no se pudo consultar» | Castaño | CP-02 | **Reabierto y vuelto a corregir.** CP-02 (9.9) demostró que la separación no cubría los fallos de conexión. S-16 aplicada, sin reverificar |
+| P-05 | Reglas de negocio ausentes | Equipo | CP-04 | **Comprobado, falta formalizar.** CP-04 (9.5) documenta la regla efectiva del 409; falta que el grupo la adopte por escrito |
+| P-06 | Controles de la IA | Castañeda | CP-05, CP-06, CP-07 | **Parcial.** CP-06 y CP-07 ejecutados y cumplen (9.7 y 9.8). CP-05 sobre el resumen semanal sigue sin ejecutarse |
 | P-07 | Versión vigente y zona horaria | Betancourth | Un solo archivo vigente | **Cerrado.** La fusión eliminó las copias divergentes |
 | P-08 | Origen del webhook | Betancourth | Llamar desde el origen real | **Abierto** |
 | P-09 | Bitácora C06 ausente | Albornoz | Que exista el archivo | **Abierto.** No afecta a esta entrega |
-| P-10 | Tipos de las entradas del subworkflow | Betancourth | CP-09 | **Cerrado por la fusión.** Ya no hay subworkflow de alerta |
-| P-11 | Reverificar el rango del periodo | Castañeda | Repetir CP-12 y contar las filas | **Abierto.** Es el más urgente |
+| P-10 | Tipos de las entradas del subworkflow | Betancourth | CP-09 | **Cerrado.** Verificado en la ejecución 192 |
+| P-11 | Reverificar el rango del periodo | Castañeda | Repetir CP-12 y contar las filas | **Abierto.** El intento del 2026-11-23 no fue concluyente: se probó sobre una copia desactualizada. Ver 9.4 |
+| P-12 | Reverificar el 502 por fallo de conexión | Betancourth | Repetir CP-02 con el host roto | **Abierto.** Nace de S-16 |
+| P-13 | Importar en n8n la versión entregada | Betancourth | Que el nodo `Consultar movimientos` muestre un solo parámetro `and` | **Abierto.** Bloquea P-11 y P-12 |
 
 ### Lo que falta para cerrar la entrega
 
-1. Reverificar CP-12. Sin eso, la corrección más importante del día queda sin respaldo.
-2. Ejecutar los siete casos que no se han ejecutado.
-3. Cerrar P-01, P-05 y P-08, que son los que bloquean CP-08 y CP-04.
-4. Capturar las evidencias de configuración.
+1. **Importar en n8n la versión entregada** (P-13). Es lo primero porque las dos
+   reverificaciones pendientes se harán sobre ella, y el intento del 2026-11-23 ya falló
+   justamente por probar sobre una copia distinta de la entregada.
+2. Reverificar CP-12 (P-11) y CP-02 (P-12). Son las dos correcciones aplicadas que no
+   tienen comprobación.
+3. Ejecutar CP-01 y CP-05. CP-08 sigue bloqueado por P-01, y CP-03 queda apartado como
+   limitación documentada.
+4. Formalizar por escrito la regla del 409 (P-05) y cerrar P-01 y P-08.
+5. Capturar las evidencias de configuración.
 
 ---
 
@@ -812,10 +945,28 @@ el mismo workflow. Es una limitación de n8n, no una decisión.
 ### Observaciones de los integrantes
 
 **Sobre el método.** La diferencia entre esta jornada y las anteriores no fue encontrar más
-fallos, sino **cómo** se encontraron. Los tres defectos de la sección 9 aparecieron por
-contrastar la salida contra la ejecución real de n8n, no por mirar el lienzo. RC-27 en
-particular era invisible desde la interfaz: nodo verde, respuesta 200, datos devueltos, y la
-cifra mal.
+fallos, sino **cómo** se encontraron. Los defectos de la sección 9 aparecieron por contrastar
+la salida contra la ejecución real de n8n, no por mirar el lienzo. RC-27 en particular era
+invisible desde la interfaz: nodo verde, respuesta 200, datos devueltos, y la cifra mal.
+
+El mismo método sirvió para separar lo que cumple de lo que solo lo parece. En CP-04 la
+respuesta 409 era correcta, pero lo que se registra como aprobado no es el código sino el
+hecho, leído en la ejecución 188, de que los nodos de escritura **no corrieron**. Un 409 con
+un descuento parcial detrás habría tenido exactamente el mismo aspecto desde fuera.
+
+**Sobre probar la versión equivocada.** El intento de reverificar CP-12 falló por una razón
+que no estaba en ningún caso de prueba: la instancia de n8n tenía cargada una copia
+intermedia, no la entregada. Se detectó porque la cifra —99 movimientos en un solo día— no
+era creíble, y al ir a la URL realmente ejecutada el `gte` seguía ausente. De ahí nace P-13.
+La lección es que **antes de probar hay que comprobar qué versión se está probando**, y que
+la forma de comprobarlo no es mirar la fecha del archivo sino buscar en el workflow cargado
+el cambio concreto que se quiere verificar.
+
+**Sobre lo que una opción cubre y lo que no.** RC-29 salió de haber leído `neverError` como
+«los errores ya no detienen el flujo», cuando lo que hace es «los **códigos** de error HTTP
+ya no detienen el flujo». Un host inalcanzable no devuelve código: no devuelve nada. La
+diferencia entre las dos lecturas es, en producción, la diferencia entre un 502 y un cliente
+esperando una respuesta que nunca llega.
 
 **Sobre la IA.** El modelo no falló en ninguno de los tres casos. En CP-12 redactó con
 exactitud lo que el flujo le dio. La lección que el equipo se lleva es que verificar la
@@ -830,9 +981,19 @@ completo aparecieron RC-24 y RC-28, que llevaban semanas ahí.
 - Ningún caso se marca como aprobado sin su evidencia asociada.
 - Un caso bloqueado por un pendiente se declara bloqueado, no pendiente a secas.
 - Antes de dar por buena una cifra producida por IA, se contrasta contra la base de datos.
+- Un caso comprueba un efecto, no un código de respuesta. Si el efecto no se puede ver en la
+  ejecución o en la tabla de destino, el caso no está comprobado.
+- Antes de una ronda de pruebas se verifica que la instancia tiene cargada la versión que se
+  va a entregar, buscando en ella el cambio que se quiere comprobar.
+- Una corrección aplicada y no vuelta a probar se registra como tal, por evidente que parezca.
 
 ### Limitaciones que permanecen
 
 Las cuatro de la sección 5 de la documentación: el manejador de errores separado, la ventana
 entre las dos escrituras, la memoria del agente sostenida solo por el prompt, y la
 herramienta que recibe texto en lugar de campos.
+
+A ellas se suman, al cierre de esta jornada, dos comprobaciones que quedan sin hacer: el
+rango del periodo (P-11) y el 502 por fallo de conexión (P-12). Las dos correcciones están
+aplicadas y razonadas, pero ninguna se ha vuelto a ejecutar. Se dicen aquí en lugar de
+presentarlas como cerradas.

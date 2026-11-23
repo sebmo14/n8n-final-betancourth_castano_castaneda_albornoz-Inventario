@@ -216,7 +216,7 @@ x-api-key: ••••••••
       <tr><td><b>404</b></td><td>El SKU no existe</td><td>Distinto de «no pude consultar»</td></tr>
       <tr><td><b>409</b></td><td>Stock insuficiente</td><td>Rechazo de negocio, no error técnico</td></tr>
       <tr><td><b>500</b></td><td>No se pudo registrar el movimiento</td><td>El stock ya se descontó: hay que saberlo</td></tr>
-      <tr><td><b>502</b></td><td>Supabase caído o descuento no confirmado</td><td>No se convierte en un 404 falso</td></tr>
+      <tr><td><b>502</b></td><td>Supabase caído o descuento no confirmado</td><td>No se convierte en un 404 falso. Cubre el servicio que responde mal <i>y</i> el que no responde</td></tr>
     </table>
   </div>
   <div class="foot"><span>Alerta automática de inventario</span><span>9</span></div>
@@ -247,23 +247,41 @@ x-api-key: ••••••••
 
 <!-- 11 -->
 <div class="d">
-  <div class="kicker">Resultados</div>
-  <h2>Qué encontramos al probar</h2>
+  <div class="kicker">Resultados &middot; Lo que s&iacute; quedó demostrado</div>
+  <h2>Cinco casos con ejecución detrás</h2>
   <div class="body">
     <table>
-      <tr><th>Fallo</th><th>Cómo se encontró</th><th>Estado</th></tr>
-      <tr><td>El filtro del periodo perdía el límite inferior</td><td>Contrastando la cifra contra la ejecución</td><td>Corregido, <b>falta reverificar</b></td></tr>
-      <tr><td>La herramienta del agente no recibía el periodo</td><td>Leyendo la ejecución del subworkflow</td><td>Corregido y comprobado</td></tr>
-      <tr><td>El agente pedía fechas que ya había calculado</td><td>Probando una consulta normal</td><td>Corregido y comprobado</td></tr>
-      <tr><td><code>Marcar alerta enviada</code> sin credencial</td><td>Revisando el archivo</td><td>Corregido, <b>sin verificar</b></td></tr>
-      <tr><td>El correo sin cifras saldría con fechas vacías</td><td>Revisando el archivo</td><td>Corregido, <b>sin verificar</b></td></tr>
+      <tr><th>Qué comprobamos</th><th>Cómo lo comprobamos</th></tr>
+      <tr><td>Una salida de 200 con 20 en stock se rechaza con <b>409</b> y <b>no descuenta nada</b></td><td>Los nodos de escritura <b>no aparecen</b> en la ejecución 188</td></tr>
+      <tr><td>La rama de alerta completa: registra, env&iacute;a el correo, marca la alerta y responde <b>200</b></td><td>Ejecución 192 de punta a punta, m&aacute;s el correo con las cifras coincidentes</td></tr>
+      <tr><td>El movimiento se registra <b>antes</b> de notificar</td><td>Orden de los nodos dentro de esa misma ejecución</td></tr>
+      <tr><td>El agente se niega a escribir</td><td>La respuesta, y los logs: <b>no invocó ninguna herramienta</b></td></tr>
+      <tr><td>El agente vuelve a consultar en lugar de recitar</td><td>Dos llamadas distintas, con la cifra movida en el movimiento a&ntilde;adido</td></tr>
     </table>
-    <p style="margin-top:22px">De los doce casos previstos, <b>cinco se ejecutaron y siete no</b>. Los que no se ejecutaron figuran como no ejecutados en la bitácora. Dos están bloqueados por pendientes que seguimos sin cerrar.</p>
+    <p style="margin-top:20px">En ninguno de los cinco damos por bueno el c&oacute;digo de respuesta. Lo que registramos es el <b>efecto</b>: qu&eacute; nodos corrieron, qu&eacute; qued&oacute; escrito y qu&eacute; lleg&oacute; al correo.</p>
   </div>
   <div class="foot"><span>Alerta automática de inventario</span><span>11</span></div>
 </div>
 
 <!-- 12 -->
+<div class="d">
+  <div class="kicker">Resultados</div>
+  <h2>Qué encontramos al probar</h2>
+  <div class="body">
+    <table>
+      <tr><th>Fallo</th><th>Cómo se encontró</th><th>Estado</th></tr>
+      <tr><td>El filtro del periodo perd&iacute;a el l&iacute;mite inferior</td><td>Contrastando la cifra contra la ejecución</td><td>Corregido, <b>falta reverificar</b></td></tr>
+      <tr><td>Un Supabase inalcanzable <b>no devolv&iacute;a 502</b>: el flujo se deten&iacute;a sin responder nada</td><td>Rompiendo el host a prop&oacute;sito</td><td>Corregido, <b>falta reverificar</b></td></tr>
+      <tr><td>La herramienta del agente no recib&iacute;a el periodo</td><td>Leyendo la ejecución del subworkflow</td><td>Corregido y comprobado</td></tr>
+      <tr><td>El agente ped&iacute;a fechas que ya hab&iacute;a calculado</td><td>Probando una consulta normal</td><td>Corregido y comprobado</td></tr>
+      <tr><td><code>Marcar alerta enviada</code> sin credencial</td><td>Revisando el archivo</td><td>Corregido y <b>verificado</b> en la ejecución 192</td></tr>
+    </table>
+    <p style="margin-top:22px">De los doce casos previstos, <b>nueve se ejecutaron y tres no</b>. Cinco de los nueve <b>no cumplieron a la primera</b>, y de ah&iacute; salieron las correcciones de arriba. Dos de ellas siguen <b>sin volver a probarse</b>, y as&iacute; constan en la bit&aacute;cora.</p>
+  </div>
+  <div class="foot"><span>Alerta automática de inventario</span><span>12</span></div>
+</div>
+
+<!-- 13 -->
 <div class="d">
   <div class="kicker">Lo que aprendimos</div>
   <h2>Una ejecución verde no es un resultado</h2>
@@ -272,13 +290,14 @@ x-api-key: ••••••••
     <div class="three" style="margin-top:30px">
       <div class="card"><h3>Verificar el dato, no la respuesta</h3><p>Comprobar que la IA respondió bien no comprueba que el flujo esté bien.</p></div>
       <div class="card"><h3>Los nombres duplicados importan</h3><p>Dos parámetros con el mismo nombre no dan error: uno gana en silencio.</p></div>
-      <div class="card"><h3>Una rama no recorrida no existe</h3><p>La rama de alerta nunca se había ejecutado hasta que falló por un tipo de dato.</p></div>
+      <div class="card"><h3>Lo que una opción cubre, y lo que no</h3><p><code>neverError</code> neutraliza los <i>c&oacute;digos</i> de error. Un servicio inalcanzable no devuelve c&oacute;digo: no devuelve nada.</p></div>
     </div>
+    <p style="margin-top:24px">Tambi&eacute;n aprendimos a comprobar <b>qu&eacute; versi&oacute;n estamos probando</b>: una de las reverificaciones fall&oacute; porque n8n ten&iacute;a cargada una copia anterior a la corrección.</p>
   </div>
-  <div class="foot"><span>Alerta automática de inventario</span><span>12</span></div>
+  <div class="foot"><span>Alerta automática de inventario</span><span>13</span></div>
 </div>
 
-<!-- 13 -->
+<!-- 14 -->
 <div class="d">
   <div class="kicker">Estado final</div>
   <h2>Limitaciones que reconocemos</h2>
@@ -287,21 +306,22 @@ x-api-key: ••••••••
       <li><b>El manejador de errores va aparte.</b> Un <code>Error Trigger</code> no admite otros disparadores en el mismo workflow. Se entrega como anexo.</li>
       <li><b>Queda una ventana entre dos escrituras.</b> El descuento y el registro son dos peticiones. El orden reduce el riesgo; no lo elimina. La solución completa sería una transacción en Postgres.</li>
       <li><b>La memoria del agente depende del prompt.</b> No hay un mecanismo que le impida reutilizar una cifra vieja; solo la instrucción de volver a consultar.</li>
+      <li><b>Dos correcciones sin reverificar.</b> El rango del periodo y el 502 por fallo de conexión est&aacute;n corregidos y razonados, pero no los hemos vuelto a ejecutar. Constan as&iacute;.</li>
       <li><b>No medimos ninguna mejora.</b> Detectar el faltante antes es la razón del proyecto, no un resultado que hayamos comprobado.</li>
     </ul>
-    <p style="margin-top:26px">Todo esto está en la documentación y en la bitácora, con el estado real de cada pendiente.</p>
+    <p style="margin-top:22px">Todo esto está en la documentación y en la bitácora, con el estado real de cada pendiente.</p>
   </div>
-  <div class="foot"><span>Alerta automática de inventario</span><span>13</span></div>
+  <div class="foot"><span>Alerta automática de inventario</span><span>14</span></div>
 </div>
 
-<!-- 14 -->
+<!-- 15 -->
 <div class="d" style="justify-content:center">
   <div class="kicker">Acceso</div>
   <h1 style="font-size:38px">El repositorio</h1>
   <div class="pre" style="margin-top:26px;font-size:17px">github.com/sebmo14/n8n-final-betancourth_castano_castaneda_albornoz-Inventario</div>
   <p style="margin-top:28px">Público. Contiene el workflow en un solo archivo, la documentación, la bitácora de pruebas con sus evidencias, los diagramas y esta presentación.</p>
   <p style="margin-top:14px;color:#5d7183;font-size:16px">Los datos de inventario son ficticios y llevan el prefijo <code>SIM-</code>. No hay credenciales en el repositorio: el README explica cómo crear las propias.</p>
-  <div class="foot"><span>EAM · 2026-II</span><span>14</span></div>
+  <div class="foot"><span>EAM · 2026-II</span><span>15</span></div>
 </div>
 
 </body>
