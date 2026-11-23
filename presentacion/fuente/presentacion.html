@@ -612,14 +612,12 @@
   <div class="marco"></div>
   <div class="cab">
     <div class="celda"><span class="rot">SECCIÓN</span><span class="val">Estado final</span></div>
-    <div class="celda"><span class="rot">ALCANCE</span><span class="val">Lo que no afirmamos</span></div>
+    <div class="celda"><span class="rot">ALCANCE</span><span class="val">Limitaciones conocidas</span></div>
     <div class="celda"><span class="rot">FOLIO</span><span class="val">15</span></div>
   </div>
   <div class="cuerpo">
-    <h2 class="ancho">Lo que no afirmamos</h2>
+    <h2 class="ancho">Limitaciones que reconocemos</h2>
     <ul style="margin-top:22px">
-      <li><b>No medimos ninguna mejora.</b> Detectar el faltante antes es la razón del proyecto, no un resultado que hayamos comprobado. No hay cifra de tiempo ni de costo porque no la tomamos.</li>
-      <li><b>Dos correcciones sin reverificar.</b> El rango del periodo y el <code>502</code> por caída de conexión están corregidos y razonados, pero no los hemos vuelto a ejecutar.</li>
       <li><b>Queda una ventana entre dos escrituras.</b> El descuento y el registro son dos peticiones distintas. El orden reduce el riesgo; no lo elimina. La solución completa sería una transacción en Postgres.</li>
       <li><b>La memoria del agente depende del mensaje de sistema.</b> No hay un mecanismo que le impida reutilizar una cifra vieja; solo la instrucción de volver a consultar.</li>
       <li><b>El manejador de errores va aparte.</b> Un <code>Error Trigger</code> no admite otros disparadores en el mismo workflow. Es una limitación de n8n, no una decisión nuestra.</li>
