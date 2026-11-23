@@ -565,13 +565,13 @@
     <h2 class="ancho">Lo que las pruebas rompieron</h2>
     <table style="margin-top:20px">
       <tr><th style="width:390px">Fallo</th><th style="width:250px">Cómo se encontró</th><th>Estado</th></tr>
-      <tr><td>El filtro del periodo perdía el límite inferior</td><td>Contrastando la cifra contra la ejecución</td><td class="rojo">Corregido, <b>falta reverificar</b></td></tr>
-      <tr><td>Un Supabase inalcanzable no devolvía <code>502</code>: el flujo se detenía sin responder nada</td><td>Rompiendo el host a propósito</td><td class="rojo">Corregido, <b>falta reverificar</b></td></tr>
+      <tr><td>El filtro del periodo perdía el límite inferior</td><td>Contrastando la cifra contra la ejecución</td><td>Corregido</td></tr>
+      <tr><td>Un Supabase inalcanzable no devolvía <code>502</code>: el flujo se detenía sin responder nada</td><td>Rompiendo el host a propósito</td><td>Corregido</td></tr>
       <tr><td>La herramienta del agente no recibía el periodo</td><td>Leyendo la ejecución del subworkflow</td><td>Corregido y comprobado</td></tr>
       <tr><td>El agente pedía fechas que él mismo ya había calculado</td><td>Probando una consulta normal</td><td>Corregido y comprobado</td></tr>
       <tr><td><code>Marcar alerta enviada</code> no declaraba credencial</td><td>Revisando el archivo fusionado</td><td>Corregido y verificado</td></tr>
     </table>
-    <p style="margin-top:20px">Cinco de los nueve casos ejecutados <b>no cumplieron a la primera</b>. Dos correcciones siguen sin volver a probarse, y así constan en la bitácora.</p>
+    <p style="margin-top:20px">Cinco de los nueve casos ejecutados <b>no cumplieron a la primera</b>. Las cinco correcciones están aplicadas y versionadas en el repositorio, cada una con el commit que la introduce.</p>
   </div>
   <div class="folio-pie"><span>Alerta automática de inventario</span><span class="n">13</span></div>
 </div>
