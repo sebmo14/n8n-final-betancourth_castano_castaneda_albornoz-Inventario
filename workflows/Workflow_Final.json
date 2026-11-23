@@ -201,7 +201,8 @@
           "id": "D7LOS0PfzFwQxCbZ",
           "name": "Supabase account"
         }
-      }
+      },
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -341,7 +342,8 @@
           "id": "D7LOS0PfzFwQxCbZ",
           "name": "Supabase account"
         }
-      }
+      },
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -557,7 +559,8 @@
       },
       "retryOnFail": true,
       "maxTries": 3,
-      "waitBetweenTries": 2000
+      "waitBetweenTries": 2000,
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -624,7 +627,7 @@
             {
               "id": "f1",
               "name": "error",
-              "value": "=No se pudo actualizar el stock en Supabase (codigo {{ $json.statusCode }})",
+              "value": "=No se pudo actualizar el stock en Supabase (codigo {{ $json.statusCode ?? 'sin respuesta del servicio' }})",
               "type": "string"
             }
           ]
@@ -762,7 +765,7 @@
             {
               "id": "e2",
               "name": "error",
-              "value": "=El stock se actualizo pero el movimiento NO quedo registrado (codigo {{ $json.statusCode }}). Revisar la tabla Movimientos.",
+              "value": "=El stock se actualizo pero el movimiento NO quedo registrado (codigo {{ $json.statusCode ?? 'sin respuesta del servicio' }}). Revisar la tabla Movimientos.",
               "type": "string"
             },
             {
@@ -914,7 +917,7 @@
             {
               "id": "c1",
               "name": "error",
-              "value": "=No se pudo consultar Supabase antes de procesar el movimiento (codigo {{ $json.statusCode }}). El movimiento NO se proceso.",
+              "value": "=No se pudo consultar Supabase antes de procesar el movimiento (codigo {{ $json.statusCode ?? 'sin respuesta del servicio' }}). El movimiento NO se proceso.",
               "type": "string"
             },
             {
@@ -1095,7 +1098,8 @@
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 2000,
-      "notes": "S-03. Se registra inmediatamente despues del descuento para que un reenvio encuentre el duplicado. alerta_enviada empieza en false."
+      "notes": "S-03. Se registra inmediatamente despues del descuento para que un reenvio encuentre el duplicado. alerta_enviada empieza en false.",
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -2214,6 +2218,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Cuerpo 502 consulta",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -2280,6 +2291,13 @@
         [
           {
             "node": "Fuente disponible? (producto)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Cuerpo 502 consulta",
             "type": "main",
             "index": 0
           }
@@ -2381,6 +2399,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Cuerpo 502",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -2418,6 +2443,13 @@
         [
           {
             "node": "Movimiento registrado?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Cuerpo 500",
             "type": "main",
             "index": 0
           }
