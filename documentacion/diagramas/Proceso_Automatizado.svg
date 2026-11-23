@@ -1,0 +1,180 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 900" width="1240" height="900"><defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a99a8"/></marker></defs><style>
+  .bg{fill:#ffffff}
+  text{font-family:'Segoe UI',system-ui,sans-serif;fill:#12233b}
+  .t{font-size:19px;font-weight:700;fill:#0f2740}
+  .st{font-size:12.5px;fill:#5d7183}
+  .n{font-size:12.5px;font-weight:600}
+  .s{font-size:11px;fill:#5d7183}
+  .lb{font-size:10.5px;fill:#5d7183;font-weight:600}
+  .sec{font-size:11px;font-weight:700;fill:#8a99a8;letter-spacing:1.2px}
+  .box{stroke-width:1.6;rx:7}
+  .proc{fill:#e3f0fc;stroke:#5b8db8}
+  .dec{fill:#fff8de;stroke:#cdb04e}
+  .ext{fill:#ede4f6;stroke:#8a6fb0}
+  .ok{fill:#e4f3e4;stroke:#73a877}
+  .err{fill:#fde8e6;stroke:#c76055}
+  .ia{fill:#e0f2f1;stroke:#4d9e97}
+  .note{fill:#f6f7f9;stroke:#c9d2da}
+  .band{fill:#fafbfc;stroke:#e4e9ee;rx:10}
+  .ln{stroke:#8a99a8;stroke-width:1.6;fill:none;marker-end:url(#a)}
+  .ln.d{stroke-dasharray:5 4;stroke:#b0bcc8}
+</style>
+<rect class="bg" width="1240" height="900"/>
+
+<text class="t" x="40" y="42">Proceso automatizado — n8n</text>
+<text class="st" x="40" y="64">Un único workflow con tres entradas. La IA redacta y consulta; no calcula ni escribe.</text>
+
+<!-- ============ BANDA 1: WEBHOOK ============ -->
+<rect class="band" x="30" y="86" width="1180" height="316"/>
+<text class="sec" x="48" y="108">ENTRADA 1 · DESPACHO EN TIEMPO REAL</text>
+
+<rect class="box proc" x="48" y="122" width="150" height="52"/>
+<text class="n" x="60" y="144">Webhook POST</text>
+<text class="s" x="60" y="161">Header Auth (x-api-key)</text>
+
+<rect class="box dec" x="228" y="122" width="140" height="52"/>
+<text class="n" x="240" y="144">Validar contrato</text>
+<text class="s" x="240" y="161">sku · cantidad · motivo</text>
+
+<rect class="box dec" x="398" y="122" width="140" height="52"/>
+<text class="n" x="410" y="144">¿Ya procesado?</text>
+<text class="s" x="410" y="161">movimiento_id único</text>
+
+<rect class="box dec" x="568" y="122" width="140" height="52"/>
+<text class="n" x="580" y="144">¿Existe el SKU?</text>
+<text class="s" x="580" y="161">GET Productos</text>
+
+<rect class="box dec" x="738" y="122" width="150" height="52"/>
+<text class="n" x="750" y="144">¿Hay stock?</text>
+<text class="s" x="750" y="161">cantidad ≤ stockActual</text>
+
+<rect class="box proc" x="918" y="122" width="150" height="52"/>
+<text class="n" x="930" y="144">PATCH stock</text>
+<text class="s" x="930" y="161">Prefer: representation</text>
+
+<path class="ln" d="M198,148 H224"/>
+<path class="ln" d="M368,148 H394"/>
+<path class="ln" d="M538,148 H564"/>
+<path class="ln" d="M708,148 H734"/>
+<path class="ln" d="M888,148 H914"/>
+
+<!-- segunda fila webhook -->
+<rect class="box dec" x="48" y="226" width="150" height="52"/>
+<text class="n" x="60" y="248">¿Se confirmó?</text>
+<text class="s" x="60" y="265">stockActual == nuevo</text>
+
+<rect class="box proc" x="228" y="226" width="150" height="52"/>
+<text class="n" x="240" y="248">POST Movimientos</text>
+<text class="s" x="240" y="265">alerta_enviada: false</text>
+
+<rect class="box dec" x="408" y="226" width="140" height="52"/>
+<text class="n" x="420" y="248">¿Bajo el mínimo?</text>
+<text class="s" x="420" y="265">stockNuevo ≤ mínimo</text>
+
+<rect class="box ok" x="578" y="226" width="140" height="52"/>
+<text class="n" x="590" y="248">Enviar alerta</text>
+<text class="s" x="590" y="265">Gmail</text>
+
+<rect class="box proc" x="748" y="226" width="150" height="52"/>
+<text class="n" x="760" y="248">Marcar enviada</text>
+<text class="s" x="760" y="265">solo si salió el correo</text>
+
+<rect class="box ok" x="928" y="226" width="140" height="52"/>
+<text class="n" x="940" y="248">Respuesta 200</text>
+<text class="s" x="940" y="265">cuatro variantes</text>
+
+<path class="ln" d="M993,174 V200 H123 V222"/>
+<path class="ln" d="M198,252 H224"/>
+<path class="ln" d="M378,252 H404"/>
+<path class="ln" d="M548,252 H574"/>
+<path class="ln" d="M718,252 H744"/>
+<path class="ln" d="M898,252 H924"/>
+
+<!-- respuestas de error -->
+<rect class="box err" x="48" y="318" width="1020" height="56"/>
+<text class="n" x="64" y="340">Cada rechazo tiene su propia respuesta</text>
+<text class="s" x="64" y="359">400 contrato inválido  ·  404 SKU inexistente  ·  409 stock insuficiente  ·  500 no se registró el movimiento  ·  502 Supabase no disponible o descuento no confirmado</text>
+
+<path class="ln d" d="M298,174 V314"/>
+<path class="ln d" d="M638,174 V314"/>
+<path class="ln d" d="M813,174 V314"/>
+<path class="ln d" d="M123,278 V314"/>
+
+<!-- ============ BANDA 2: RESUMEN ============ -->
+<rect class="band" x="30" y="420" width="1180" height="190"/>
+<text class="sec" x="48" y="442">ENTRADA 2 · RESUMEN SEMANAL (LUNES)</text>
+
+<rect class="box proc" x="48" y="456" width="140" height="52"/>
+<text class="n" x="60" y="478">Schedule</text>
+<text class="s" x="60" y="495">lunes por la mañana</text>
+
+<rect class="box proc" x="218" y="456" width="150" height="52"/>
+<text class="n" x="230" y="478">Calcular semana</text>
+<text class="s" x="230" y="495">lunes a domingo</text>
+
+<rect class="box proc" x="398" y="456" width="160" height="52"/>
+<text class="n" x="410" y="478">Consultar + sumar</text>
+<text class="s" x="410" y="495">las cifras salen de aquí</text>
+
+<rect class="box ia" x="588" y="456" width="150" height="52"/>
+<text class="n" x="600" y="478">Gemini redacta</text>
+<text class="s" x="600" y="495">solo el texto</text>
+
+<rect class="box dec" x="768" y="456" width="150" height="52"/>
+<text class="n" x="780" y="478">Contrastar cifras</text>
+<text class="s" x="780" y="495">marca lo no calculado</text>
+
+<rect class="box ok" x="948" y="456" width="120" height="52"/>
+<text class="n" x="960" y="478">Correo</text>
+<text class="s" x="960" y="495">texto + cifras</text>
+
+<path class="ln" d="M188,482 H214"/>
+<path class="ln" d="M368,482 H394"/>
+<path class="ln" d="M558,482 H584"/>
+<path class="ln" d="M738,482 H764"/>
+<path class="ln" d="M918,482 H944"/>
+
+<rect class="box note" x="48" y="528" width="1020" height="62"/>
+<text class="n" x="64" y="550">Por qué el modelo no calcula</text>
+<text class="s" x="64" y="569">Los totales los produce un nodo Code a partir de las filas. El correo lleva las cifras crudas junto al texto redactado, de modo que</text>
+<text class="s" x="64" y="584">cualquiera puede comprobar si la redacción corresponde a los datos. Si no hay movimientos, se dice; no se convierte en cero.</text>
+
+<!-- ============ BANDA 3: AGENTE ============ -->
+<rect class="band" x="30" y="628" width="1180" height="160"/>
+<text class="sec" x="48" y="650">ENTRADA 3 · AGENTE DE CONSULTA</text>
+
+<rect class="box proc" x="48" y="664" width="140" height="52"/>
+<text class="n" x="60" y="686">Chat</text>
+<text class="s" x="60" y="703">pregunta en español</text>
+
+<rect class="box ia" x="218" y="664" width="150" height="52"/>
+<text class="n" x="230" y="686">Agente Gemini</text>
+<text class="s" x="230" y="703">memoria por sesión</text>
+
+<rect class="box ia" x="398" y="664" width="190" height="52"/>
+<text class="n" x="410" y="686">resumen_movimientos</text>
+<text class="s" x="410" y="703">única herramienta · SOLO LECTURA</text>
+
+<rect class="box ext" x="618" y="664" width="150" height="52"/>
+<text class="n" x="630" y="686">Supabase</text>
+<text class="s" x="630" y="703">GET Movimientos</text>
+
+<rect class="box ok" x="798" y="664" width="140" height="52"/>
+<text class="n" x="810" y="686">Respuesta</text>
+<text class="s" x="810" y="703">con las fechas usadas</text>
+
+<path class="ln" d="M188,690 H214"/>
+<path class="ln" d="M368,690 H394"/>
+<path class="ln" d="M588,690 H614"/>
+<path class="ln" d="M768,690 H794"/>
+
+<rect class="box note" x="968" y="664" width="200" height="52"/>
+<text class="s" x="980" y="684">No puede crear, modificar</text>
+<text class="s" x="980" y="700">ni borrar nada.</text>
+
+<!-- ============ PIE ============ -->
+<rect class="box note" x="30" y="806" width="1180" height="62"/>
+<text class="n" x="46" y="828">Servicios e infraestructura</text>
+<text class="s" x="46" y="847">Supabase (PostgREST) — tablas Productos, Movimientos y Errores  ·  Gmail — alerta y resumen  ·  Google Gemini — redacción y agente</text>
+<text class="s" x="46" y="862">El manejador de errores se entrega aparte: un Error Trigger no admite otros disparadores en el mismo workflow.</text>
+</svg>
